@@ -265,4 +265,4 @@ async function startMafia(message) {
   });
 }
 
-client.login('MTUxMjQyMTkzMjQ1OTYyMjU0MA.GCEF_G.ry2gcl0WuIasMMI6NNWKCxcBbTvbjHey6RCOJ0');
+client.login(process.env.TOKEN || 'MTUxMjQyMTkzMjQ1OTYyMjU0MA.GULQOU.1y1SqGjp-c87mYQEkPvnc_T6xv17exVGB_jyuU');
