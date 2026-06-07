@@ -112,13 +112,11 @@ async function startRoulette(message) {
 }
 
 async function playRound(message, players) {
-  // إذا بقي 2 = البوت يختار فائز عشوائي
   if (players.length === 2) {
     const winner = players[Math.floor(Math.random() * players.length)];
     const loser = players.find(p => p.id !== winner.id);
     const prize = Math.floor(Math.random() * 21) + 10;
     points.set(winner.id, (points.get(winner.id) || 0) + prize);
-
     const embed = new EmbedBuilder()
       .setTitle('🏆 | اخر اثنين!')
       .setDescription(`**${winner.name}** 🆚 **${loser.name}**\n\n🎉 | **${winner.name}** فاز بالروليت!\n💎 | +${prize} نقطة`)
@@ -127,8 +125,6 @@ async function playRound(message, players) {
     activeGames.delete('roulette-' + message.channel.id);
     return;
   }
-
-  // إذا بقي 1 = فاز تلقائي
   if (players.length === 1) {
     const winner = players[0];
     const prize = Math.floor(Math.random() * 21) + 10;
@@ -138,7 +134,6 @@ async function playRound(message, players) {
     return;
   }
 
-  // اختيار لاعب عشوائي للدور
   const chooser = players[Math.floor(Math.random() * players.length)];
   const others = players.filter(p => p.id !== chooser.id);
 
@@ -163,15 +158,13 @@ async function playRound(message, players) {
   ));
 
   const roundMsg = await message.channel.send({ content: `<@${chooser.id}>`, embeds: [embed], components: rows });
-
   const filter = i => i.user.id === chooser.id;
   const roundCollector = roundMsg.createMessageComponentCollector({ filter, time: 15000, max: 1 });
 
   roundCollector.on('collect', async (i) => {
     let target;
-    if (i.customId === 'kick-random') {
-      target = others[Math.floor(Math.random() * others.length)];
-    } else if (i.customId === 'kick-nuclear') {
+    if (i.customId === 'kick-random') target = others[Math.floor(Math.random() * others.length)];
+    else if (i.customId === 'kick-nuclear') {
       if (others.length >= 2) {
         const t1 = others[Math.floor(Math.random() * others.length)];
         const t2 = others.filter(p => p.id !== t1.id)[Math.floor(Math.random() * (others.length - 1))];
@@ -208,14 +201,12 @@ async function playRound(message, players) {
 function startReplica(message) {
   const filter = m => m.author.id === message.author.id;
   const collector = message.channel.createMessageCollector({ filter, time: 60000 });
-  gameCollectors.set('replica-' + message.channel.id, collector);
   collector.on('collect', async (m) => {
-    if (m.content === '$خروج' || m.content === '$ايقاف') { collector.stop(); return message.channel.send('👋 تم إنهاء الريبلكا!'); }
+    if (m.content === '$خروج') { collector.stop(); return message.channel.send('👋 تم إنهاء الريبلكا!'); }
     const prize = Math.floor(Math.random() * 3) + 1;
     points.set(message.author.id, (points.get(message.author.id) || 0) + prize);
     await m.reply(`🤖: ${m.content}\n+${prize} 💎`);
   });
-  collector.on('end', () => gameCollectors.delete('replica-' + message.channel.id));
 }
 
 async function startMafia(message) {
@@ -225,28 +216,22 @@ async function startMafia(message) {
   const msg = await message.channel.send({ content: '**🔪 | مافيا**\n👥 اللاعبين: **0** | (4-100)', files: [IMAGES.mafia], components: [row] });
   const players = [];
   const collector = msg.createMessageComponentCollector({ time: 60000 });
-  gameCollectors.set('mafia-' + message.channel.id, collector);
-
   collector.on('collect', async (i) => {
     if (i.customId === 'm-join') { if (!players.includes(i.user.id)) { players.push(i.user.id); await i.reply({ content: '🔪 دخلت!', ephemeral: true }); } }
     if (i.customId === 'm-exit') { players.splice(players.indexOf(i.user.id), 1); await i.reply({ content: '👋 خرجت!', ephemeral: true }); }
     await msg.edit({ content: `**🔪 | مافيا**\n👥 اللاعبين: **${players.length}** | (4-100)` });
   });
-
   collector.on('end', async (_, reason) => {
-    gameCollectors.delete('mafia-' + message.channel.id);
     if (reason === 'forced') { activeGames.delete('mafia-' + message.channel.id); return; }
     if (players.length < 4) { activeGames.delete('mafia-' + message.channel.id); return message.channel.send(`❌ | عدد غير كافي (${players.length}/4).`); }
     const mafia = players[Math.floor(Math.random() * players.length)];
     await message.channel.send(`🔪 المافيا مخفي\n👥 المدنيين: ${players.filter(p => p !== mafia).length} لاعبين\n🎯 صوتوا بمنشن!`);
-
     const vc = message.channel.createMessageCollector({ filter: m => players.includes(m.author.id) && m.mentions.users.size > 0, time: 30000 });
     const votes = new Map();
     vc.on('collect', async (m) => {
       const t = m.mentions.users.first().id;
       if (t === m.author.id) return m.reply('❌ لا تصوت لنفسك!');
-      votes.set(m.author.id, t);
-      await m.react('✅');
+      votes.set(m.author.id, t); await m.react('✅');
     });
     vc.on('end', async () => {
       const count = {};
@@ -265,4 +250,4 @@ async function startMafia(message) {
   });
 }
 
-client.login(process.env.TOKEN || 'MTUxMjQyMTkzMjQ1OTYyMjU0MA.GULQOU.1y1SqGjp-c87mYQEkPvnc_T6xv17exVGB_jyuU');
+client.login(process.env.TOKEN);
